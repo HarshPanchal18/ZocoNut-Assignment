@@ -8,7 +8,6 @@ import android.os.Handler
 import android.os.Looper
 import android.view.WindowManager
 import com.example.zoconut_assignment.databinding.ActivityMainBinding
-import com.example.zoconut_assignment.ui.HomeActivity
 import com.example.zoconut_assignment.ui.login.LoginActivity
 
 class MainActivity : AppCompatActivity() {

@@ -1,8 +1,8 @@
 package com.example.zoconut_assignment.ui
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import com.example.zoconut_assignment.R
 import com.example.zoconut_assignment.databinding.ActivityHomeBinding
 
 class HomeActivity : AppCompatActivity() {
@@ -11,5 +11,9 @@ class HomeActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        binding.scannerBtn.setOnClickListener {
+            startActivity(Intent(this, ScannerActivity::class.java))
+        }
     }
 }
