@@ -5,17 +5,13 @@ import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import android.view.ViewGroup
-import android.widget.Toast
-import androidx.camera.core.CameraX
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.ImageAnalysisConfig
-import androidx.camera.core.Preview
-import androidx.camera.core.PreviewConfig
+import android.view.SurfaceHolder
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.LifecycleOwner
 import com.example.zoconut_assignment.databinding.ActivityScannerBinding
-import com.example.zoconut_assignment.helpers.QRCodeAnalyzer
+import com.google.zxing.ResultPoint
+import com.journeyapps.barcodescanner.BarcodeCallback
+import com.journeyapps.barcodescanner.BarcodeResult
 
 class ScannerActivity : AppCompatActivity() {
 
@@ -24,18 +20,69 @@ class ScannerActivity : AppCompatActivity() {
     }
 
     private lateinit var binding: ActivityScannerBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityScannerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        askPermissionOrInitialize()
     }
 
-    private fun isCameraPermissionGranted(): Boolean {
-        return ContextCompat.checkSelfPermission(
-            baseContext,
-            Manifest.permission.CAMERA
-        ) == PackageManager.PERMISSION_GRANTED
+    private fun askPermissionOrInitialize() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.CAMERA),
+                REQUEST_CAMERA_PERMISSION
+            )
+        }
+        else
+            initializeScanner()
+
+    }
+
+    private fun initializeScanner() {
+        binding.barcodeScanner.decodeContinuous(object : BarcodeCallback {
+            override fun barcodeResult(result: BarcodeResult?) {
+                result?.let {
+                    // Handle the scanned QR code result
+                    val qrCodeData = result.text
+                    Log.d("MainActivity", "Scanned QR Code: $qrCodeData")
+                }
+            }
+
+            override fun possibleResultPoints(resultPoints: MutableList<ResultPoint>?) {
+                // Optional callback for possible result points
+            }
+        })
+
+        binding.barcodeScanner.setStatusText("Scan QR Code")
+
+        //val surfaceView: SurfaceView = findViewById(R.id.preview_view)
+        binding.previewView.holder.addCallback(object : SurfaceHolder.Callback {
+            override fun surfaceCreated(holder: SurfaceHolder) {
+                try {
+                    binding.barcodeScanner.resume()
+                } catch (e: Exception) {
+                    Log.e("MainActivity", "Error starting camera preview: ${e.message}")
+                }
+            }
+
+            override fun surfaceChanged(
+                holder: SurfaceHolder,
+                format: Int,
+                width: Int,
+                height: Int
+            ) {
+            }
+
+            override fun surfaceDestroyed(holder: SurfaceHolder) {
+                binding.barcodeScanner.pause()
+            }
+        })
     }
 
     override fun onRequestPermissionsResult(
@@ -45,43 +92,11 @@ class ScannerActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CAMERA_PERMISSION) {
-            if (isCameraPermissionGranted()) {
-                binding.textureView.post { startCamera() }
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                initializeScanner()
             } else {
-                Toast.makeText(
-                    this,
-                    "Permission for camera is required to scan the QR",
-                    Toast.LENGTH_SHORT
-                ).show()
-                finish()
+                // Camera permission not granted, handle accordingly
             }
         }
-    }
-
-    private fun startCamera() {
-        val previewConfig = PreviewConfig.Builder()
-            .setLensFacing(CameraX.LensFacing.BACK)
-            .build()
-
-        val preview = Preview(previewConfig)
-
-        preview.setOnPreviewOutputUpdateListener { previewOutput ->
-            val parent = binding.textureView.parent as ViewGroup
-            parent.removeView(binding.textureView)
-            binding.textureView.setSurfaceTexture(previewOutput.surfaceTexture)
-            parent.addView(binding.textureView,0)
-        }
-
-        val imageAnalysisConfig = ImageAnalysisConfig.Builder().build()
-        val imageAnalysis = ImageAnalysis(imageAnalysisConfig)
-
-        val qrCodeAnalyzer = QRCodeAnalyzer { qrCodes ->
-            qrCodes.forEach{ barcode ->
-                Log.i("HomeActivity","Detected QR: ${barcode.rawValue}")
-            }
-        }
-        imageAnalysis.analyzer = qrCodeAnalyzer
-
-        CameraX.bindToLifecycle(this as LifecycleOwner, preview, imageAnalysis)
     }
 }
