@@ -2,8 +2,12 @@ package com.example.zoconut_assignment.ui
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.View
+import android.webkit.MimeTypeMap
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -18,14 +22,22 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
+import com.google.zxing.BarcodeFormat
+import com.journeyapps.barcodescanner.BarcodeEncoder
+import java.io.ByteArrayOutputStream
 import kotlin.system.exitProcess
 
 class HomeActivity : AppCompatActivity() {
     private lateinit var binding: ActivityHomeBinding
     private lateinit var dbReference: DatabaseReference
-    private lateinit var database: FirebaseDatabase
     private var auth = FirebaseAuth.getInstance()
     private val user = auth.currentUser
+    private var storageRef: StorageReference = FirebaseStorage.getInstance().getReference("images/")
+    private var imageURI: Uri? = Uri.EMPTY
+    var imageURL: String? = null
+    var qrURL: String? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityHomeBinding.inflate(layoutInflater)
@@ -34,10 +46,17 @@ class HomeActivity : AppCompatActivity() {
         dbReference =
             FirebaseDatabase.getInstance().getReference(user?.uid.toString()).child("userProfile")
 
-
         getRealtimeData()
         binding.scannerBtn.setOnClickListener {
             startActivity(Intent(this, ScannerActivity::class.java))
+        }
+
+        binding.editImage.setOnClickListener {
+            val galleryIntent = Intent().apply {
+                action = Intent.ACTION_GET_CONTENT
+                type = "image/*"
+            }
+            startActivityForResult(galleryIntent, 2)
         }
 
         binding.apply {
@@ -47,6 +66,18 @@ class HomeActivity : AppCompatActivity() {
             mailBox.setText(user?.email.toString())
 
             saveAsQrBtn.setOnClickListener {
+                val qrRef = storageRef.child("${user?.uid}_qr")
+                    qrRef.putBytes(getQR())
+                    .addOnSuccessListener {
+                        qrRef.downloadUrl.addOnSuccessListener { uri ->
+                            qrURL = uri.toString()
+                            Log.e("QR", qrURL.toString())
+                        }.addOnFailureListener {
+                            Log.e("QR", it.message.toString())
+                        }
+                    }.addOnFailureListener {
+                        Log.e("QRREF", it.message.toString())
+                    }
                 pushOnDatabase()
             }
 
@@ -64,10 +95,49 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 2 && data?.data != null) {
+            imageURI = data.data
+            binding.profileImage.loadImage(imageURI.toString())
+            imageURI?.let { uploadImageToFirebaseStorage(it) }
+        }
+    }
+
+    private fun getQR(): ByteArray {
+        val barcodeEncoder = BarcodeEncoder()
+        val qrcode = barcodeEncoder.encodeBitmap(user?.uid, BarcodeFormat.QR_CODE, 500, 500)
+        val baos = ByteArrayOutputStream()
+        qrcode.compress(Bitmap.CompressFormat.JPEG, 100, baos)
+        return baos.toByteArray()
+    }
+
+    private fun uploadImageToFirebaseStorage(imageUri: Uri) {
+        val TAG = "MainActivity"
+
+        storageRef.child("${user?.uid}").putFile(imageUri)
+            .addOnSuccessListener {
+                storageRef.downloadUrl.addOnSuccessListener { uri ->
+                    imageURL = uri.toString()
+                    // Handle the image URL as needed
+                    Log.d(TAG, "Image URL: $imageURL")
+                }.addOnFailureListener {
+                    Log.d(TAG, "Image URL: ${it.message.toString()}")
+                }
+            }
+            .addOnFailureListener { exception ->
+                // Handle the image upload failure
+                Log.e(TAG, "Image upload failed: ${exception.message}")
+            }
+    }
+
     private fun getRealtimeData() {
         dbReference.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val value = snapshot.getValue(UserModel::class.java)
+                if (value?.userPicture?.isNotEmpty() == true)
+                    binding.profileImage.loadImage(value.userPicture)
+                binding.nameBox.setText(value?.name)
                 binding.githubBox.setText(value?.githubHandle)
                 binding.skillBox.setText(value?.skills)
                 binding.phoneBox.setText(value?.contact)
@@ -93,12 +163,24 @@ class HomeActivity : AppCompatActivity() {
             binding.githubBox.error = "Github Username is mandatory"
 
         val userData =
-            UserModel(user?.uid.toString(), name, user?.email, github, skills, phone, country)
+            UserModel(
+                imageURL,
+                qrURL,
+                user?.uid.toString(),
+                name,
+                user?.email,
+                github,
+                skills,
+                phone,
+                country
+            )
         dbReference.setValue(userData)
             .addOnSuccessListener {
+                Log.i("MainActivity", imageURL.toString())
                 this.showToast("Data inserted successfully")
                 binding.apply {
                     editImage.gone()
+                    imageUploading.gone()
                     tilPhone.isEnabled = false
                     tilMail.isEnabled = false
                     tilName.isEnabled = false
@@ -111,6 +193,12 @@ class HomeActivity : AppCompatActivity() {
             }.addOnFailureListener {
                 this.showToast(it.message.toString())
             }
+    }
+
+    private fun getFileExtension(imageURI: Uri): String {
+        val cResolver = contentResolver
+        val mime = MimeTypeMap.getSingleton()
+        return mime.getExtensionFromMimeType(cResolver.getType(imageURI)).toString()
     }
 
     private fun ImageView.loadImage(url: String?) {
