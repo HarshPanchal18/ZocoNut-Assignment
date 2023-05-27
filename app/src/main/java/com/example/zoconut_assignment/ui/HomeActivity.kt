@@ -69,8 +69,8 @@ class HomeActivity : AppCompatActivity() {
                 val qrRef = storageRef.child("${user?.uid}_qr")
                     qrRef.putBytes(getQR())
                     .addOnSuccessListener {
-                        qrRef.downloadUrl.addOnSuccessListener { uri ->
-                            qrURL = uri.toString()
+                        qrRef.downloadUrl.addOnSuccessListener { qrUri ->
+                            qrURL = qrUri.toString()
                             Log.e("QR", qrURL.toString())
                         }.addOnFailureListener {
                             Log.e("QR", it.message.toString())
@@ -115,11 +115,11 @@ class HomeActivity : AppCompatActivity() {
     private fun uploadImageToFirebaseStorage(imageUri: Uri) {
         val TAG = "MainActivity"
 
-        storageRef.child("${user?.uid}").putFile(imageUri)
+        val profileRef = storageRef.child("${user?.uid}")
+            profileRef.putFile(imageUri)
             .addOnSuccessListener {
-                storageRef.downloadUrl.addOnSuccessListener { uri ->
-                    imageURL = uri.toString()
-                    // Handle the image URL as needed
+                profileRef.downloadUrl.addOnSuccessListener { imageUri ->
+                    imageURL = imageUri.toString()
                     Log.d(TAG, "Image URL: $imageURL")
                 }.addOnFailureListener {
                     Log.d(TAG, "Image URL: ${it.message.toString()}")
@@ -177,6 +177,7 @@ class HomeActivity : AppCompatActivity() {
         dbReference.setValue(userData)
             .addOnSuccessListener {
                 Log.i("MainActivity", imageURL.toString())
+                Log.i("MainActivity", qrURL.toString())
                 this.showToast("Data inserted successfully")
                 binding.apply {
                     editImage.gone()
