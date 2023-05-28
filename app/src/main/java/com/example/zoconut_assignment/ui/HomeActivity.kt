@@ -105,6 +105,10 @@ class HomeActivity : AppCompatActivity() {
             Glide.with(this).load(value?.qrPicture).into(dialogView.findViewById(R.id.previewedImage))
             AlertDialog.Builder(this).setView(dialogView).show()
         }
+
+        binding.contactListBtn.setOnClickListener {
+            startActivity(Intent(this,ContactActivity::class.java))
+        }
     }
 
     private fun createAndUploadQR() {

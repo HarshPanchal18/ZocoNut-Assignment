@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/scannedProfile"
+    android:background="@color/white"
+    android:padding="10sp">
+
+    <ImageView
+        android:id="@+id/profileImage"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_width="80sp"
+        android:layout_height="80sp"/>
+
+    <TextView
+        android:id="@+id/profileName"
+        android:layout_toEndOf="@id/profileImage"
+        android:layout_marginHorizontal="10sp"
+        android:layout_width="match_parent"
+        android:text="Name"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/profileContact"
+        android:layout_toEndOf="@id/profileImage"
+        android:layout_below="@id/profileName"
+        android:text="Contact"
+        android:layout_marginHorizontal="10sp"
+        android:layout_width="wrap_content"
+        android:paddingEnd="10sp"
+        android:textSize="14sp"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/profileCountry"
+        android:layout_toEndOf="@id/profileContact"
+        android:layout_below="@id/profileName"
+        android:text="Country"
+        android:textSize="14sp"
+        android:layout_marginHorizontal="10sp"
+        android:layout_width="wrap_content"
+        android:paddingEnd="10sp"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/profileSkills"
+        android:layout_below="@id/profileContact"
+        android:layout_toEndOf="@id/profileImage"
+        android:layout_width="wrap_content"
+        android:layout_marginHorizontal="10sp"
+        android:layout_marginTop="6sp"
+        android:text="Skills"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/profileGithub"
+        android:layout_below="@id/profileSkills"
+        android:layout_toEndOf="@id/profileImage"
+        android:layout_width="wrap_content"
+        android:layout_marginHorizontal="10sp"
+        android:layout_marginTop="6sp"
+        android:text="Github"
+        android:layout_height="wrap_content"/>
+
+</RelativeLayout>
