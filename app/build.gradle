@@ -69,4 +69,5 @@ dependencies {
 
     // Rounded ImageView: https://github.com/vinc3m1/RoundedImageView
     //implementation 'com.makeramen:roundedimageview:2.3.0'
+
 }

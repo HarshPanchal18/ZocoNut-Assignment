@@ -6,10 +6,11 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
-import android.webkit.MimeTypeMap
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
@@ -36,28 +37,17 @@ class HomeActivity : AppCompatActivity() {
     private val user = auth.currentUser
     private var storageRef: StorageReference = FirebaseStorage.getInstance().getReference("images/")
     private var imageURI: Uri? = Uri.EMPTY
-    var imageURL: String? = null
-    var qrURL: String? = null
+    private var imageURL: String? = null
+    private var qrURL: String? = null
+    private var value: UserModel? = UserModel()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         dbReference =
-            FirebaseDatabase.getInstance().getReference(user?.uid.toString()).child("userProfile")
-
-        getRealtimeData()
-        binding.scannerBtn.setOnClickListener {
-            startActivity(Intent(this, ScannerActivity::class.java))
-        }
-
-        binding.editImage.setOnClickListener {
-            val galleryIntent = Intent().apply {
-                action = Intent.ACTION_GET_CONTENT
-                type = "image/*"
-            }
-            startActivityForResult(galleryIntent, 2)
-        }
+            FirebaseDatabase.getInstance().getReference("users").child(user?.uid.toString())
 
         binding.apply {
 
@@ -66,18 +56,7 @@ class HomeActivity : AppCompatActivity() {
             mailBox.setText(user?.email.toString())
 
             saveAsQrBtn.setOnClickListener {
-                val qrRef = storageRef.child("${user?.uid}_qr")
-                    qrRef.putBytes(getQR())
-                    .addOnSuccessListener {
-                        qrRef.downloadUrl.addOnSuccessListener { qrUri ->
-                            qrURL = qrUri.toString()
-                            Log.e("QR", qrURL.toString())
-                        }.addOnFailureListener {
-                            Log.e("QR", it.message.toString())
-                        }
-                    }.addOnFailureListener {
-                        Log.e("QRREF", it.message.toString())
-                    }
+                createAndUploadQR()
                 pushOnDatabase()
             }
 
@@ -93,50 +72,12 @@ class HomeActivity : AppCompatActivity() {
                 it.isEnabled = false
             }
         }
-    }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == 2 && data?.data != null) {
-            imageURI = data.data
-            binding.profileImage.loadImage(imageURI.toString())
-            imageURI?.let { uploadImageToFirebaseStorage(it) }
-        }
-    }
-
-    private fun getQR(): ByteArray {
-        val barcodeEncoder = BarcodeEncoder()
-        val qrcode = barcodeEncoder.encodeBitmap(user?.uid, BarcodeFormat.QR_CODE, 500, 500)
-        val baos = ByteArrayOutputStream()
-        qrcode.compress(Bitmap.CompressFormat.JPEG, 100, baos)
-        return baos.toByteArray()
-    }
-
-    private fun uploadImageToFirebaseStorage(imageUri: Uri) {
-        val TAG = "MainActivity"
-
-        val profileRef = storageRef.child("${user?.uid}")
-            profileRef.putFile(imageUri)
-            .addOnSuccessListener {
-                profileRef.downloadUrl.addOnSuccessListener { imageUri ->
-                    imageURL = imageUri.toString()
-                    Log.d(TAG, "Image URL: $imageURL")
-                }.addOnFailureListener {
-                    Log.d(TAG, "Image URL: ${it.message.toString()}")
-                }
-            }
-            .addOnFailureListener { exception ->
-                // Handle the image upload failure
-                Log.e(TAG, "Image upload failed: ${exception.message}")
-            }
-    }
-
-    private fun getRealtimeData() {
         dbReference.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val value = snapshot.getValue(UserModel::class.java)
+                value = snapshot.getValue(UserModel::class.java)
                 if (value?.userPicture?.isNotEmpty() == true)
-                    binding.profileImage.loadImage(value.userPicture)
+                    binding.profileImage.loadImage(value?.userPicture)
                 binding.nameBox.setText(value?.name)
                 binding.githubBox.setText(value?.githubHandle)
                 binding.skillBox.setText(value?.skills)
@@ -146,6 +87,82 @@ class HomeActivity : AppCompatActivity() {
 
             override fun onCancelled(error: DatabaseError) {}
         })
+
+        binding.scannerBtn.setOnClickListener {
+            startActivity(Intent(this, ScannerActivity::class.java))
+        }
+
+        binding.editImage.setOnClickListener {
+            val galleryIntent = Intent().apply {
+                action = Intent.ACTION_GET_CONTENT
+                type = "image/*"
+            }
+            startActivityForResult(galleryIntent, 2)
+        }
+
+        binding.profileImage.setOnClickListener {
+            val dialogView: View = LayoutInflater.from(this).inflate(R.layout.dialog_image, null)
+            Glide.with(this).load(value?.qrPicture).into(dialogView.findViewById(R.id.previewedImage))
+            AlertDialog.Builder(this).setView(dialogView).show()
+        }
+    }
+
+    private fun createAndUploadQR() {
+        val qrRef = storageRef.child("${user?.uid}_qr")
+        qrRef.putBytes(getQRBitmap()).addOnSuccessListener {
+            qrRef.downloadUrl.addOnSuccessListener { qrUri ->
+                qrURL = qrUri.toString()
+                Log.e("QR", qrURL.toString())
+                binding.imageUploading.gone()
+                binding.saveAsQrBtn.isEnabled = true
+            }.addOnFailureListener {
+                Log.e("QRException", it.message.toString())
+            }
+        }.addOnFailureListener {
+            Log.e("QRRefException", it.message.toString())
+        }.addOnProgressListener {
+            binding.imageUploading.visible()
+            binding.saveAsQrBtn.isEnabled = false
+        }
+    }
+
+    private fun getQRBitmap(): ByteArray {
+        val barcodeEncoder = BarcodeEncoder()
+        val qrcode = barcodeEncoder.encodeBitmap(user?.uid, BarcodeFormat.QR_CODE, 500, 500)
+        val baos = ByteArrayOutputStream()
+        qrcode.compress(Bitmap.CompressFormat.JPEG, 100, baos)
+        return baos.toByteArray()
+    }
+
+
+    private fun uploadProfileImageToFirebaseStorage(imageUri: Uri) {
+        val TAG = "MainActivity"
+        val profileRef = storageRef.child("${user?.uid}")
+        profileRef.putFile(imageUri).addOnSuccessListener {
+            profileRef.downloadUrl.addOnSuccessListener { imageUri ->
+                imageURL = imageUri.toString()
+                Log.d(TAG, "Image URL: $imageURL")
+                binding.imageUploading.gone()
+                binding.saveAsQrBtn.isEnabled = true
+            }.addOnFailureListener {
+                Log.d(TAG, "Image Exception: ${it.message.toString()}")
+            }
+        }.addOnFailureListener { exception ->
+            // Handle the image upload failure
+            Log.e(TAG, "Image upload failed: ${exception.message}")
+        }.addOnProgressListener {
+            binding.imageUploading.visible()
+            binding.saveAsQrBtn.isEnabled = false
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 2 && data?.data != null) {
+            imageURI = data.data
+            binding.profileImage.loadImage(imageURI.toString())
+            imageURI?.let { uploadProfileImageToFirebaseStorage(it) }
+        }
     }
 
     private fun pushOnDatabase() {
@@ -161,6 +178,11 @@ class HomeActivity : AppCompatActivity() {
             binding.nameBox.error = "Username is mandatory"
         if (github.isEmpty())
             binding.githubBox.error = "Github Username is mandatory"
+
+        if (value?.userPicture?.isNotEmpty() == true && imageURL == null)
+            imageURL = value?.userPicture
+        if(value?.qrPicture?.isNotEmpty() == true && qrURL == null)
+            qrURL = value?.qrPicture
 
         val userData =
             UserModel(
@@ -194,12 +216,6 @@ class HomeActivity : AppCompatActivity() {
             }.addOnFailureListener {
                 this.showToast(it.message.toString())
             }
-    }
-
-    private fun getFileExtension(imageURI: Uri): String {
-        val cResolver = contentResolver
-        val mime = MimeTypeMap.getSingleton()
-        return mime.getExtensionFromMimeType(cResolver.getType(imageURI)).toString()
     }
 
     private fun ImageView.loadImage(url: String?) {
