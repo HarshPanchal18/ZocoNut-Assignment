@@ -40,7 +40,7 @@ class ScannerActivity : AppCompatActivity() {
     private var value: UserModel? = UserModel()
     private var userModel: UserModel = UserModel()
     private val user = FirebaseAuth.getInstance().currentUser
-    val profileBookmarks: MutableList<String?> = mutableListOf()
+    val profileBookmarks: ArrayList<String> = arrayListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -138,40 +138,29 @@ class ScannerActivity : AppCompatActivity() {
                     sbinding.profileCountry.text = value?.country
 
                     sbinding.saveProfileBtn.setOnClickListener {
-                        //profileBookmarks.add(value?.profileSaves.toString())
+                        if(value?.profileSaves.isNullOrEmpty())
+                            profileBookmarks.add(value?.userId.toString())
                         if (value?.profileSaves?.isNotEmpty() == true)
                             profileBookmarks.addAll(value?.profileSaves!!)
-                        value?.apply {
-                            /*userModel = UserModel(
-                                userPicture,
-                                qrPicture,
-                                user?.uid,
-                                name,
-                                user?.email,
-                                githubHandle,
-                                skills,
-                                contact,
-                                country,
-                                profileBookmarks.toSet().toMutableList()
-                            )*/
-                            dbReference = FirebaseDatabase.getInstance().getReference("users")
-                                .child("${user?.uid}/profileSaves")
-                                val key = dbReference.push().key
-                                dbReference.child(key!!).setValue(profileBookmarks)
-                                .addOnSuccessListener {
-                                    Toast.makeText(
-                                        applicationContext,
-                                        "Contact saved to your profile",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }.addOnFailureListener {
-                                    Toast.makeText(
-                                        applicationContext,
-                                        it.message.toString(),
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                        }
+
+                        dbReference =
+                            FirebaseDatabase.getInstance().getReference("users/${user?.uid}")
+                        dbReference.updateChildren(mapOf("profileSaves" to profileBookmarks.toSet().toList()))
+                            .addOnSuccessListener {
+                                Toast.makeText(
+                                    applicationContext,
+                                    "Contact saved to your profile",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                finish()
+                                //Log.i("Profile", profileBookmarks.toString())
+                            }.addOnFailureListener {
+                                Toast.makeText(
+                                    applicationContext,
+                                    it.message.toString(),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                     }
                 }
 
