@@ -10,4 +10,5 @@ data class UserModel(
     val skills: String? = null,
     val contact: String? = null,
     val country: String? = null,
+    val profileSaves: ArrayList<String> = arrayListOf()
 )

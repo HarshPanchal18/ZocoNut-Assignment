@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.SurfaceHolder
 import android.widget.ImageView
 import android.widget.Toast
@@ -17,6 +18,7 @@ import com.example.zoconut_assignment.R
 import com.example.zoconut_assignment.data.UserModel
 import com.example.zoconut_assignment.databinding.ActivityScannerBinding
 import com.example.zoconut_assignment.databinding.ScannedProfileBinding
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -33,10 +35,12 @@ class ScannerActivity : AppCompatActivity() {
     }
 
     private lateinit var binding: ActivityScannerBinding
-    private lateinit var alertBinding: ScannedProfileBinding
     private lateinit var dbReference: DatabaseReference
     val children: MutableList<String> = mutableListOf()
     private var value: UserModel? = UserModel()
+    private var userModel: UserModel = UserModel()
+    private val user = FirebaseAuth.getInstance().currentUser
+    val profileBookmarks: MutableList<String?> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,8 +72,8 @@ class ScannerActivity : AppCompatActivity() {
                 arrayOf(Manifest.permission.CAMERA),
                 REQUEST_CAMERA_PERMISSION
             )
-        } else
-            initializeScanner()
+        }
+        initializeScanner()
     }
 
     private fun initializeScanner() {
@@ -82,7 +86,7 @@ class ScannerActivity : AppCompatActivity() {
                         previewProfileOf(qrCodeData)
                     }
                     Log.d("MainActivity", "Scanned QR Code: $qrCodeData")
-                    Log.d("MainActivity", "Scanned User Code: $children")
+                    //Log.d("MainActivity", "Scanned User Code: $children")
                 }
             }
 
@@ -117,13 +121,8 @@ class ScannerActivity : AppCompatActivity() {
     }
 
     private fun previewProfileOf(qrCodeData: String?) {
-        /*val builder = AlertDialog.Builder(this, R.style.AlertDialogTheme)
-        val sbinding = ScannedProfileBinding.bind(
-            LayoutInflater.from(this).inflate(
-                R.layout.scanned_profile,
-                this.findViewById<RelativeLayout>(R.id.scannedProfile)
-            )
-        )
+        val sbinding = ScannedProfileBinding.inflate(LayoutInflater.from(this), null, false)
+        val builder = AlertDialog.Builder(this)
         builder.setView(sbinding.root)
 
         dbReference.child(qrCodeData.toString()).addValueEventListener(
@@ -137,35 +136,52 @@ class ScannerActivity : AppCompatActivity() {
                     sbinding.profileSkills.text = value?.skills
                     sbinding.profileContact.text = value?.contact
                     sbinding.profileCountry.text = value?.country
+
+                    sbinding.saveProfileBtn.setOnClickListener {
+                        //profileBookmarks.add(value?.profileSaves.toString())
+                        if (value?.profileSaves?.isNotEmpty() == true)
+                            profileBookmarks.addAll(value?.profileSaves!!)
+                        value?.apply {
+                            /*userModel = UserModel(
+                                userPicture,
+                                qrPicture,
+                                user?.uid,
+                                name,
+                                user?.email,
+                                githubHandle,
+                                skills,
+                                contact,
+                                country,
+                                profileBookmarks.toSet().toMutableList()
+                            )*/
+                            dbReference = FirebaseDatabase.getInstance().getReference("users")
+                                .child("${user?.uid}/profileSaves")
+                                val key = dbReference.push().key
+                                dbReference.child(key!!).setValue(profileBookmarks)
+                                .addOnSuccessListener {
+                                    Toast.makeText(
+                                        applicationContext,
+                                        "Contact saved to your profile",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }.addOnFailureListener {
+                                    Toast.makeText(
+                                        applicationContext,
+                                        it.message.toString(),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                        }
+                    }
                 }
 
                 override fun onCancelled(error: DatabaseError) {}
             }
         )
-        val alertDialog = builder.create()
-        builder.setPositiveButton("Save to contacts") { _, _ -> }
-        builder.setNegativeButton("Dismiss") { _, _ -> }
-
-        if (alertDialog.window != null) {
-            alertDialog.window!!.setBackgroundDrawable(ColorDrawable(0))
-        }
-        alertDialog.setCancelable(true)
-        alertDialog.show()*/
-
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle(qrCodeData)
-        builder.setMessage(qrCodeData)
-        builder.setIcon(android.R.drawable.ic_dialog_alert)
-
-        builder.setPositiveButton("Yes") { _, _ ->
-            Toast.makeText(applicationContext, "clicked yes", Toast.LENGTH_LONG).show()
-        }
-        builder.setNegativeButton("No") { _, _ -> }
 
         // Create the AlertDialog
-        val alertDialog: AlertDialog = builder.create()
-        // Set other dialog properties
-        alertDialog.setCancelable(false)
+        val alertDialog = builder.create()
+        alertDialog.setCancelable(true)
         alertDialog.show()
     }
 

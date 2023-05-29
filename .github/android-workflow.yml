@@ -1,0 +1,43 @@
+name: Android CI-CD
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: gradle
+
+      # Install NDK
+      - name: Install NDK
+        run: echo "y" | sudo ${ANDROID_HOME}/tools/bin/sdkmanager --install "ndk;20.0.5594570" --sdk_root=${ANDROID_SDK_ROOT}
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        env:
+          org.gradle.daemon: true
+        run: ./gradlew build
+      - name: Build debug APK
+        env:
+          org.gradle.daemon: true
+        run: ./gradlew assemble #Debug --stacktrace #-PapiLevel=${{ matrix.api-level }}
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: Venue-Dock
+          path: app/build/outputs/apk/debug/app-debug.apk
