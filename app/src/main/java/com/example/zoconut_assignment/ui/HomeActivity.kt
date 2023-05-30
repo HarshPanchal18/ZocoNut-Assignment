@@ -14,6 +14,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
+import com.example.zoconut_assignment.MainActivity
 import com.example.zoconut_assignment.R
 import com.example.zoconut_assignment.data.UserModel
 import com.example.zoconut_assignment.databinding.ActivityHomeBinding
@@ -100,14 +101,23 @@ class HomeActivity : AppCompatActivity() {
             startActivityForResult(galleryIntent, 2)
         }
 
+        binding.logoutBtn.setOnClickListener {
+            auth.signOut()
+            Intent(this, MainActivity::class.java).also {
+                it.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(it)
+            }
+        }
+
         binding.profileImage.setOnClickListener {
             val dialogView: View = LayoutInflater.from(this).inflate(R.layout.dialog_image, null)
-            Glide.with(this).load(value?.qrPicture).into(dialogView.findViewById(R.id.previewedImage))
+            Glide.with(this).load(value?.qrPicture)
+                .into(dialogView.findViewById(R.id.previewedImage))
             AlertDialog.Builder(this).setView(dialogView).show()
         }
 
         binding.contactListBtn.setOnClickListener {
-            startActivity(Intent(this,ContactActivity::class.java))
+            startActivity(Intent(this, ContactActivity::class.java))
         }
     }
 
@@ -137,7 +147,6 @@ class HomeActivity : AppCompatActivity() {
         qrcode.compress(Bitmap.CompressFormat.JPEG, 100, baos)
         return baos.toByteArray()
     }
-
 
     private fun uploadProfileImageToFirebaseStorage(imageUri: Uri) {
         val TAG = "MainActivity"
@@ -185,7 +194,7 @@ class HomeActivity : AppCompatActivity() {
 
         if (value?.userPicture?.isNotEmpty() == true && imageURL == null)
             imageURL = value?.userPicture
-        if(value?.qrPicture?.isNotEmpty() == true && qrURL == null)
+        if (value?.qrPicture?.isNotEmpty() == true && qrURL == null)
             qrURL = value?.qrPicture
 
         val userData =

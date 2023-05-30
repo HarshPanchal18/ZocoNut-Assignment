@@ -5,22 +5,27 @@
     android:id="@+id/scannedProfile"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_margin="20sp">
+    android:layout_marginTop="80dp"
+    android:background="#00000000"
+    android:layout_gravity="center_vertical"
+    android:layout_marginHorizontal="20sp"
+    android:paddingBottom="20dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/layoutDialog"
-        android:layout_marginVertical="40sp"
         android:background="@drawable/dialog_bg">
 
         <ImageView
             android:id="@+id/profileImage"
-            android:layout_width="160sp"
-            android:layout_height="160sp"
+            android:layout_width="120sp"
+            android:layout_height="120sp"
             android:src="@drawable/error"
+            android:clipToOutline="false"
             android:layout_marginTop="30sp"
             android:contentDescription="ProfilePicture"
+            app:layout_constraintBottom_toTopOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -108,7 +113,6 @@
             android:textSize="15sp"
             android:layout_marginTop="5sp"
             android:layout_toEndOf="@id/profileImage"
-            android:paddingBottom="20sp"
             android:text="Github"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

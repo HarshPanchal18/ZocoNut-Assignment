@@ -38,9 +38,7 @@ class ScannerActivity : AppCompatActivity() {
     private lateinit var dbReference: DatabaseReference
     val children: MutableList<String> = mutableListOf()
     private var value: UserModel? = UserModel()
-    private var userModel: UserModel = UserModel()
     private val user = FirebaseAuth.getInstance().currentUser
-    val profileBookmarks: ArrayList<String> = arrayListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,8 +51,10 @@ class ScannerActivity : AppCompatActivity() {
         dbReference.database.reference.child("users")
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    for (snap in snapshot.children)
+                    for (snap in snapshot.children) {
+                        // Collecting all user's userIds into an array for checking if scanned profile's userId is registered or not
                         children.add(snap.key.toString())
+                    }
                 }
 
                 override fun onCancelled(error: DatabaseError) {}
@@ -125,48 +125,53 @@ class ScannerActivity : AppCompatActivity() {
         val builder = AlertDialog.Builder(this)
         builder.setView(sbinding.root)
 
-        dbReference.child(qrCodeData.toString()).addValueEventListener(
-            object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    value = snapshot.getValue(UserModel::class.java)
-                    if (value?.userPicture?.isNotEmpty() == true)
-                        sbinding.profileImage.loadImage(value?.userPicture)
-                    sbinding.profileName.text = value?.name
-                    sbinding.profileGithub.text = value?.githubHandle
-                    sbinding.profileSkills.text = value?.skills
-                    sbinding.profileContact.text = value?.contact
-                    sbinding.profileCountry.text = value?.country
+        dbReference.child(qrCodeData.toString()).addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                value = snapshot.getValue(UserModel::class.java)
+                if (value?.userPicture?.isNotEmpty() == true)
+                    sbinding.profileImage.loadImage(value?.userPicture)
+                sbinding.profileName.text = value?.name
+                sbinding.profileGithub.text = value?.githubHandle
+                sbinding.profileSkills.text = value?.skills
+                sbinding.profileContact.text = value?.contact
+                sbinding.profileCountry.text = value?.country
 
-                    sbinding.saveProfileBtn.setOnClickListener {
-                        if(value?.profileSaves.isNullOrEmpty())
-                            profileBookmarks.add(value?.userId.toString())
-                        if (value?.profileSaves?.isNotEmpty() == true)
-                            profileBookmarks.addAll(value?.profileSaves!!)
+                sbinding.saveProfileBtn.setOnClickListener {
 
-                        dbReference =
-                            FirebaseDatabase.getInstance().getReference("users/${user?.uid}")
-                        dbReference.updateChildren(mapOf("profileSaves" to profileBookmarks.toSet().toList()))
-                            .addOnSuccessListener {
-                                Toast.makeText(
-                                    applicationContext,
-                                    "Contact saved to your profile",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                finish()
-                                //Log.i("Profile", profileBookmarks.toString())
-                            }.addOnFailureListener {
-                                Toast.makeText(
-                                    applicationContext,
-                                    it.message.toString(),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                    }
+                    dbReference =
+                        FirebaseDatabase.getInstance()
+                            .getReference("users/${user?.uid}/profileSaves")
+                    val arrayTicketRef = FirebaseDatabase.getInstance().reference.child("users/${user?.uid}/profileSaves")
+                    arrayTicketRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(dataSnapshot: DataSnapshot) {
+                            val length = dataSnapshot.childrenCount.toInt()
+                            arrayTicketRef.child(length.toString()).setValue(value?.userId)
+                                .addOnSuccessListener {
+                                    Toast.makeText(
+                                        applicationContext,
+                                        "Contact saved to your profile",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    finish()
+                                    //Log.i("Profile", profileBookmarks.toString())
+                                }.addOnFailureListener {
+                                    Toast.makeText(
+                                        applicationContext,
+                                        it.message.toString(),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                        }
+
+                        override fun onCancelled(databaseError: DatabaseError) {
+                            // Handle error
+                        }
+                    })
                 }
-
-                override fun onCancelled(error: DatabaseError) {}
             }
-        )
+
+            override fun onCancelled(error: DatabaseError) {}
+        })
 
         // Create the AlertDialog
         val alertDialog = builder.create()

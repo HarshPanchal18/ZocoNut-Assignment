@@ -18,4 +18,5 @@
         android:layout_marginStart="15sp"
         android:layout_gravity="center_vertical"
         android:layout_height="wrap_content"/>
+
 </LinearLayout>

@@ -11,12 +11,12 @@ import com.bumptech.glide.request.RequestOptions
 import com.example.zoconut_assignment.R
 import com.example.zoconut_assignment.data.UserModel
 import com.example.zoconut_assignment.databinding.ContactCardBinding
-import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 
 class ContactAdapter(private val items: ArrayList<UserModel?>) :
     RecyclerView.Adapter<ContactAdapter.ContactViewHolder>() {
 
-    private val user = FirebaseAuth.getInstance().currentUser
+    private var dbReference = FirebaseDatabase.getInstance().getReference("users")
 
     class ContactViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val profileImage: ImageView = itemView.findViewById(R.id.profileImage)
@@ -28,13 +28,17 @@ class ContactAdapter(private val items: ArrayList<UserModel?>) :
         return ContactViewHolder(binding.root)
     }
 
-    override fun getItemCount(): Int {
-        return items.size
-    }
+    override fun getItemCount(): Int = items.size
 
     override fun onBindViewHolder(holder: ContactViewHolder, position: Int) {
             holder.profileImage.loadImage(items[position]?.userPicture)
             holder.profileText.text = items[position]?.name
+    }
+
+    fun setUsers(users: List<UserModel>) {
+        items.clear()
+        items.addAll(users)
+        notifyDataSetChanged()
     }
 
     private fun ImageView.loadImage(url: String?) {
