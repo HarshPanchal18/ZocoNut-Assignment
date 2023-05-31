@@ -14,10 +14,10 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
-import com.example.zoconut_assignment.MainActivity
 import com.example.zoconut_assignment.R
 import com.example.zoconut_assignment.data.UserModel
 import com.example.zoconut_assignment.databinding.ActivityHomeBinding
+import com.example.zoconut_assignment.ui.login.LoginActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -64,18 +64,17 @@ class HomeActivity : AppCompatActivity() {
             editBtn.setOnClickListener {
                 editImage.visible()
                 tilPhone.isEnabled = true
-                tilMail.isEnabled = true
                 tilName.isEnabled = true
                 tilGithub.isEnabled = true
                 tilCountry.isEnabled = true
                 tilSkills.isEnabled = true
                 saveAsQrBtn.isEnabled = true
-                it.isEnabled = false
             }
         }
 
         dbReference.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                // Assign database values to the views
                 value = snapshot.getValue(UserModel::class.java)
                 if (value?.userPicture?.isNotEmpty() == true)
                     binding.profileImage.loadImage(value?.userPicture)
@@ -86,7 +85,9 @@ class HomeActivity : AppCompatActivity() {
                 binding.countryBox.setText(value?.country)
             }
 
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("DatabaseError", error.message)
+            }
         })
 
         binding.scannerBtn.setOnClickListener {
@@ -102,15 +103,28 @@ class HomeActivity : AppCompatActivity() {
         }
 
         binding.logoutBtn.setOnClickListener {
-            auth.signOut()
-            Intent(this, MainActivity::class.java).also {
-                it.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                startActivity(it)
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle("Logout")
+            builder.setMessage("Are you sure you want to Logout?")
+            builder.setIcon(R.drawable.ic_logout)
+            builder.setPositiveButton("Yes") { _, _ ->
+                auth.signOut()
+                Intent(this, LoginActivity::class.java).also {
+                    it.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(it)
+                }
+                finish()
             }
+            builder.setNegativeButton("No") { _, _ -> }
+
+            val alertDialog = builder.create() // Create the AlertDialog
+            alertDialog.setCancelable(false)
+            alertDialog.show()
         }
 
         binding.profileImage.setOnClickListener {
-            val dialogView: View = LayoutInflater.from(this).inflate(R.layout.dialog_image, null)
+            // Pops up QR code
+            val dialogView: View = LayoutInflater.from(this).inflate(R.layout.qr_dialog_image, null)
             Glide.with(this).load(value?.qrPicture)
                 .into(dialogView.findViewById(R.id.previewedImage))
             AlertDialog.Builder(this).setView(dialogView).show()
@@ -130,7 +144,7 @@ class HomeActivity : AppCompatActivity() {
                 binding.imageUploading.gone()
                 binding.saveAsQrBtn.isEnabled = true
             }.addOnFailureListener {
-                Log.e("QRException", it.message.toString())
+                Log.e("QRLinkException", it.message.toString())
             }
         }.addOnFailureListener {
             Log.e("QRRefException", it.message.toString())
@@ -142,27 +156,28 @@ class HomeActivity : AppCompatActivity() {
 
     private fun getQRBitmap(): ByteArray {
         val barcodeEncoder = BarcodeEncoder()
+        // Generate QRCode in Bitmap format
+        // Attach current user's userID, Specify Format, Give width-height
         val qrcode = barcodeEncoder.encodeBitmap(user?.uid, BarcodeFormat.QR_CODE, 500, 500)
-        val baos = ByteArrayOutputStream()
-        qrcode.compress(Bitmap.CompressFormat.JPEG, 100, baos)
-        return baos.toByteArray()
+        val byteArrayOpStream = ByteArrayOutputStream()
+        qrcode.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOpStream)
+        return byteArrayOpStream.toByteArray()
     }
 
     private fun uploadProfileImageToFirebaseStorage(imageUri: Uri) {
-        val TAG = "MainActivity"
         val profileRef = storageRef.child("${user?.uid}")
         profileRef.putFile(imageUri).addOnSuccessListener {
             profileRef.downloadUrl.addOnSuccessListener { imageUri ->
                 imageURL = imageUri.toString()
-                Log.d(TAG, "Image URL: $imageURL")
+                Log.d("ImageURL", "Image URL: $imageURL")
                 binding.imageUploading.gone()
                 binding.saveAsQrBtn.isEnabled = true
             }.addOnFailureListener {
-                Log.d(TAG, "Image Exception: ${it.message.toString()}")
+                Log.e("ImageURLException", "Image Exception: ${it.message.toString()}")
             }
         }.addOnFailureListener { exception ->
             // Handle the image upload failure
-            Log.e(TAG, "Image upload failed: ${exception.message}")
+            Log.e("ImageUploadException", "Image upload failed: ${exception.message}")
         }.addOnProgressListener {
             binding.imageUploading.visible()
             binding.saveAsQrBtn.isEnabled = false
@@ -173,7 +188,7 @@ class HomeActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == 2 && data?.data != null) {
             imageURI = data.data
-            binding.profileImage.loadImage(imageURI.toString())
+            binding.profileImage.loadImage(imageURI.toString()) // set Image after selecting
             imageURI?.let { uploadProfileImageToFirebaseStorage(it) }
         }
     }
@@ -184,13 +199,6 @@ class HomeActivity : AppCompatActivity() {
         val skills = binding.skillBox.text.toString()
         val phone = binding.phoneBox.text.toString()
         val country = binding.countryBox.text.toString()
-
-        if (binding.phoneBox.text?.isEmpty() == true)
-            binding.phoneBox.error = "Phone number is mandatory"
-        if (name.isEmpty())
-            binding.nameBox.error = "Username is mandatory"
-        if (github.isEmpty())
-            binding.githubBox.error = "Github Username is mandatory"
 
         if (value?.userPicture?.isNotEmpty() == true && imageURL == null)
             imageURL = value?.userPicture
@@ -218,13 +226,11 @@ class HomeActivity : AppCompatActivity() {
                     editImage.gone()
                     imageUploading.gone()
                     tilPhone.isEnabled = false
-                    tilMail.isEnabled = false
                     tilName.isEnabled = false
                     tilGithub.isEnabled = false
                     tilCountry.isEnabled = false
                     tilSkills.isEnabled = false
                     saveAsQrBtn.isEnabled = false
-                    editBtn.isEnabled = true
                 }
             }.addOnFailureListener {
                 this.showToast(it.message.toString())
@@ -235,7 +241,7 @@ class HomeActivity : AppCompatActivity() {
         Glide.with(this)
             .load(url)
             .apply(RequestOptions.circleCropTransform())
-            .placeholder(R.drawable.ic_account)
+            .placeholder(R.drawable.error)
             .error(R.drawable.error)
             .into(this)
     }

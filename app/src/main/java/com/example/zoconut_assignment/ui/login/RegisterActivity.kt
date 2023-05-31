@@ -2,24 +2,18 @@ package com.example.zoconut_assignment.ui.login
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
-import android.graphics.drawable.ColorDrawable
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Patterns
-import android.view.LayoutInflater
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.example.zoconut_assignment.R
 import com.example.zoconut_assignment.databinding.ActivityRegisterBinding
-import com.example.zoconut_assignment.databinding.ErrorDialogBinding
-import com.example.zoconut_assignment.databinding.SuccessDialogBinding
 import com.example.zoconut_assignment.ui.HomeActivity
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -57,22 +51,17 @@ class RegisterActivity : AppCompatActivity() {
         googleSignInClient = GoogleSignIn.getClient(this, gso)
 
         // Validation starts here
-        val emailStream = RxTextView.textChanges(binding.etMail)
-            .skipInitialValue()
+        val emailStream = RxTextView.textChanges(binding.etMail) // Creates an Observable for password box
+            .skipInitialValue() // Remove boundaries
             .map { mail -> !Patterns.EMAIL_ADDRESS.matcher(mail).matches() }
         emailStream.subscribe { showEmailValidAlert(it) }
 
-        /*val userNameStream=RxTextView.textChanges(et_username)
-            .skipInitialValue()
-            .map { username -> username.length < 6 }
-        userNameStream.subscribe { showTextMinimalAlert(it,"Username") }*/
-
-        val passwordStream = RxTextView.textChanges(binding.etPassword)
-            .skipInitialValue()
+        val passwordStream = RxTextView.textChanges(binding.etPassword) // Creates an Observable for password box
+            .skipInitialValue() // Remove boundaries
             .map { password -> password.length < 8 }
         passwordStream.subscribe { showTextMinimalAlert(it, "Password") }
 
-        val passwordConfirmStream =
+        val passwordConfirmStream = // Checking two controls in parallel
             Observable.merge(
                 RxTextView.textChanges(binding.etPassword).skipInitialValue()
                     .map { password -> password.toString() != binding.etConfPassword.text.toString() },
@@ -167,6 +156,7 @@ class RegisterActivity : AppCompatActivity() {
         auth.signInWithCredential(credential).addOnCompleteListener {
             if (it.isSuccessful) {
                 startActivity(Intent(this, HomeActivity::class.java))
+                finish()
             } else {
                 showErrorDialog(it.exception?.message.toString())
             }
@@ -229,58 +219,28 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun showErrorDialog(message: String) {
-        val builder = AlertDialog.Builder(this, R.style.AlertDialogTheme)
-        val ebinding: ErrorDialogBinding = ErrorDialogBinding.bind(
-            LayoutInflater.from(this)
-                .inflate(
-                    R.layout.error_dialog,
-                    findViewById<ConstraintLayout>(R.id.layoutDialogContainer)
-                )
-        )
 
-        builder.setView(ebinding.root)
-        ebinding.textTitle.text = resources.getString(R.string.network_error_title)
-        ebinding.textMessage.text = message
-        ebinding.buttonAction.text = resources.getString(R.string.okay)
-        ebinding.imageIcon.setImageResource(R.drawable.error)
+        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
+        builder.setTitle("ERROR")
+        builder.setMessage(message)
+        builder.setIcon(R.drawable.error)
+        builder.setNeutralButton("Okay"){ _, _ -> }
 
-        val alertDialog = builder.create()
-        ebinding.buttonAction.setOnClickListener { alertDialog.dismiss() }
-
-        if (alertDialog.window != null) {
-            alertDialog.window!!.setBackgroundDrawable(ColorDrawable(0))
-        }
-
+        val alertDialog = builder.create() // Create the AlertDialog
         alertDialog.setCancelable(false)
         alertDialog.show()
     }
 
     private fun showSuccessDialog(message: String) {
-        val builder = AlertDialog.Builder(this, R.style.AlertDialogTheme)
-        val sbinding: SuccessDialogBinding = SuccessDialogBinding.bind(
-            LayoutInflater.from(this)
-                .inflate(
-                    R.layout.success_dialog,
-                    this.findViewById<ConstraintLayout>(R.id.layoutDialogContainer)
-                )
-        )
+        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
+        builder.setTitle("Done")
+        builder.setMessage(message)
+        builder.setIcon(R.drawable.done)
+        builder.setNeutralButton("Okay"){ _, _ -> }
 
-        builder.setView(sbinding.root)
-        sbinding.textTitle.text = resources.getString(R.string.success_title)
-        sbinding.textMessage.text = message
-        sbinding.buttonAction.text = resources.getString(R.string.okay)
-        sbinding.imageIcon.setImageResource(R.drawable.done)
-
-        val alertDialog = builder.create()
-        sbinding.buttonAction.setOnClickListener {
-            alertDialog.dismiss()
-            finish()
-        }
-
-        if (alertDialog.window != null) {
-            alertDialog.window!!.setBackgroundDrawable(ColorDrawable(0))
-        }
+        val alertDialog = builder.create() // Create the AlertDialog
         alertDialog.setCancelable(false)
         alertDialog.show()
     }
+
 }

@@ -2,6 +2,7 @@ package com.example.zoconut_assignment.ui
 
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.zoconut_assignment.adapters.ContactAdapter
@@ -20,6 +21,7 @@ class ContactActivity : AppCompatActivity() {
     private val user = FirebaseAuth.getInstance().currentUser
     private var userContacts = ArrayList<UserModel?>()
     val adapter = ContactAdapter(userContacts)
+    private val profileSaves: ArrayList<String> = ArrayList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,28 +35,31 @@ class ContactActivity : AppCompatActivity() {
             FirebaseDatabase.getInstance().getReference("users")
 
         fetchProfileSaves(user?.uid.toString())
+        binding.contactRecycler.adapter = adapter
+        if(adapter.itemCount == 0)
+            binding.emptyContacts.visibility = View.VISIBLE
     }
 
     private fun fetchUsers(profileSaves: List<String>) {
-        val usersList: MutableList<UserModel> = mutableListOf()
-
+        val usersList: ArrayList<UserModel> = arrayListOf()
         dbReference.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 for (snap in dataSnapshot.children) {
                     val userModel = snap.getValue(UserModel::class.java)
                     userModel?.let {
                         val id = snap.key
+                        // Store users into usersList for adapter
                         if (id != null && profileSaves.contains(id))
                             usersList.add(userModel)
                     }
                 }
-                adapter.setUsers(usersList)
+                adapter.setUsers(usersList) // Set Adapter after storing users
                 Log.e("UserList", usersList.toString())
             }
 
             override fun onCancelled(error: DatabaseError) {
                 Log.e(
-                    "ContactActivity",
+                    "DatabaseError",
                     "Error fetching user details: ${error.message}"
                 )
             }
@@ -67,18 +72,24 @@ class ContactActivity : AppCompatActivity() {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val userModel = snapshot.getValue(UserModel::class.java)
                     userModel?.let {
-                        val profileSaves = userModel.profileSaves
-                        fetchUsers(profileSaves)
-                        Log.e("Saves", userModel.profileSaves.toString())
+                        val profileSaves = userModel.profileSaves.distinct()
+                        fetchUsers(profileSaves) // Store each userID to fetch every userID's data
+                        Log.d("Profiles", userModel.profileSaves.toString())
                     }
                 }
 
                 override fun onCancelled(error: DatabaseError) {
                     Log.e(
-                        "ContactActivity",
+                        "DatabaseError",
                         "Error fetching user details: ${error.message}"
                     )
                 }
             })
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        profileSaves.clear()
+        adapter.notifyDataSetChanged()
     }
 }

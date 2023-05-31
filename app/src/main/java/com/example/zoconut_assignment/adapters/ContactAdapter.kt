@@ -11,16 +11,14 @@ import com.bumptech.glide.request.RequestOptions
 import com.example.zoconut_assignment.R
 import com.example.zoconut_assignment.data.UserModel
 import com.example.zoconut_assignment.databinding.ContactCardBinding
-import com.google.firebase.database.FirebaseDatabase
 
 class ContactAdapter(private val items: ArrayList<UserModel?>) :
     RecyclerView.Adapter<ContactAdapter.ContactViewHolder>() {
 
-    private var dbReference = FirebaseDatabase.getInstance().getReference("users")
-
     class ContactViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val profileImage: ImageView = itemView.findViewById(R.id.profileImage)
         val profileText: TextView = itemView.findViewById(R.id.profileName)
+        val profileGithub: TextView = itemView.findViewById(R.id.profileGithub)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ContactViewHolder {
@@ -31,13 +29,14 @@ class ContactAdapter(private val items: ArrayList<UserModel?>) :
     override fun getItemCount(): Int = items.size
 
     override fun onBindViewHolder(holder: ContactViewHolder, position: Int) {
-            holder.profileImage.loadImage(items[position]?.userPicture)
-            holder.profileText.text = items[position]?.name
+        holder.profileImage.loadImage(items[position]?.userPicture)
+        holder.profileText.text = items[position]?.name
+        holder.profileGithub.text = items[position]?.githubHandle
     }
 
-    fun setUsers(users: List<UserModel>) {
-        items.clear()
-        items.addAll(users)
+    fun setUsers(users: ArrayList<UserModel>) { // setting adapter after get all the User data
+        this.items.clear()
+        this.items.addAll(users)
         notifyDataSetChanged()
     }
 

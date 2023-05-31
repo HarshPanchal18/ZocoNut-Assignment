@@ -2,6 +2,7 @@ package com.example.zoconut_assignment.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -85,7 +86,7 @@ class ScannerActivity : AppCompatActivity() {
                     if (children.contains(qrCodeData)) {
                         previewProfileOf(qrCodeData)
                     }
-                    Log.d("MainActivity", "Scanned QR Code: $qrCodeData")
+                    Log.d("QR Code URL", "Scanned QR Code: $qrCodeData")
                     //Log.d("MainActivity", "Scanned User Code: $children")
                 }
             }
@@ -98,9 +99,9 @@ class ScannerActivity : AppCompatActivity() {
         binding.barcodeScanner.setStatusText("Scan QR Code")
 
         binding.previewView.holder.addCallback(object : SurfaceHolder.Callback {
-            override fun surfaceCreated(holder: SurfaceHolder) {
+            override fun surfaceCreated(holder: SurfaceHolder) { // Called when surface for scanning QR code is created
                 try {
-                    binding.barcodeScanner.resume()
+                    binding.barcodeScanner.resume() // start camera preview after the surface is created
                 } catch (e: Exception) {
                     Log.e("MainActivity", "Error starting camera preview: ${e.message}")
                 }
@@ -115,18 +116,24 @@ class ScannerActivity : AppCompatActivity() {
             }
 
             override fun surfaceDestroyed(holder: SurfaceHolder) {
-                binding.barcodeScanner.pause()
+                binding.barcodeScanner.pause() // Shut down the camera after the surface is destroyed
             }
         })
     }
 
     private fun previewProfileOf(qrCodeData: String?) {
-        val sbinding = ScannedProfileBinding.inflate(LayoutInflater.from(this), null, false)
         val builder = AlertDialog.Builder(this)
+        val sbinding = ScannedProfileBinding.inflate(LayoutInflater.from(this), null, false)
         builder.setView(sbinding.root)
+        val alertDialog = builder.create()
+        if (alertDialog.window != null) {
+            alertDialog.window!!.setBackgroundDrawable(ColorDrawable(0))
+        }
 
+        // Fetch profile data of scanned QR code
         dbReference.child(qrCodeData.toString()).addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                // Fetching scanned QR code's user data to make show on Alertdialog
                 value = snapshot.getValue(UserModel::class.java)
                 if (value?.userPicture?.isNotEmpty() == true)
                     sbinding.profileImage.loadImage(value?.userPicture)
@@ -136,16 +143,17 @@ class ScannerActivity : AppCompatActivity() {
                 sbinding.profileContact.text = value?.contact
                 sbinding.profileCountry.text = value?.country
 
-                sbinding.saveProfileBtn.setOnClickListener {
-
+                sbinding.saveContactBtn?.setOnClickListener {
                     dbReference =
                         FirebaseDatabase.getInstance()
                             .getReference("users/${user?.uid}/profileSaves")
-                    val arrayTicketRef = FirebaseDatabase.getInstance().reference.child("users/${user?.uid}/profileSaves")
-                    arrayTicketRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                    val profileRef =
+                        FirebaseDatabase.getInstance().reference.child("users/${user?.uid}/profileSaves")
+                    profileRef.addListenerForSingleValueEvent(object : ValueEventListener {
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
+                            // Pushing scanned user's userID to the current User's profileSaves along with index as a key
                             val length = dataSnapshot.childrenCount.toInt()
-                            arrayTicketRef.child(length.toString()).setValue(value?.userId)
+                            profileRef.child(length.toString()).setValue(value?.userId)
                                 .addOnSuccessListener {
                                     Toast.makeText(
                                         applicationContext,
@@ -153,7 +161,6 @@ class ScannerActivity : AppCompatActivity() {
                                         Toast.LENGTH_SHORT
                                     ).show()
                                     finish()
-                                    //Log.i("Profile", profileBookmarks.toString())
                                 }.addOnFailureListener {
                                     Toast.makeText(
                                         applicationContext,
@@ -164,17 +171,22 @@ class ScannerActivity : AppCompatActivity() {
                         }
 
                         override fun onCancelled(databaseError: DatabaseError) {
-                            // Handle error
+                            Log.e("DatabaseError", databaseError.message)
                         }
                     })
                 }
+
+                sbinding.cancelBtn?.setOnClickListener {
+                    alertDialog.dismiss()
+                }
             }
 
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("DatabaseError", error.message)
+            }
         })
 
-        // Create the AlertDialog
-        val alertDialog = builder.create()
+        // Create the AlertDialog and show
         alertDialog.setCancelable(true)
         alertDialog.show()
     }
@@ -203,7 +215,7 @@ class ScannerActivity : AppCompatActivity() {
         Glide.with(this)
             .load(url)
             .apply(RequestOptions.circleCropTransform())
-            .placeholder(R.drawable.ic_account)
+            .placeholder(R.drawable.error)
             .error(R.drawable.error)
             .into(this)
     }

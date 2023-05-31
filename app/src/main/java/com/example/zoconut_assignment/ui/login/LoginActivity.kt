@@ -2,21 +2,18 @@ package com.example.zoconut_assignment.ui.login
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
-import android.graphics.drawable.ColorDrawable
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.*
-import androidx.appcompat.app.AppCompatActivity
-import android.view.LayoutInflater
+import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.example.zoconut_assignment.R
 import com.example.zoconut_assignment.databinding.ActivityLoginBinding
-import com.example.zoconut_assignment.databinding.ErrorDialogBinding
 import com.example.zoconut_assignment.ui.HomeActivity
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -53,28 +50,44 @@ class LoginActivity : AppCompatActivity() {
 
         googleSignInClient = GoogleSignIn.getClient(this, gso)
 
-        val userNameStream = RxTextView.textChanges(binding.etMail)
-            .skipInitialValue()
-            .map { username -> username.isEmpty() }
-        userNameStream.subscribe { showTextMinimalAlert(it, "Email/Username") }
+        val userNameStream =
+            RxTextView.textChanges(binding.etMail)// Creates an Observable for email box
+                .skipInitialValue() // trim boundaries
+                .map { username -> username.isEmpty() } // maps each character whether the email is valid or not
+        userNameStream.subscribe {
+            showTextMinimalAlert(
+                it,
+                "Email/Username"
+            )
+        } // handle upon each character
 
-        val passwordStream = RxTextView.textChanges(binding.etPassword)
-            .skipInitialValue()
-            .map { password -> password.isEmpty() }
-        passwordStream.subscribe { showTextMinimalAlert(it, "Password") }
+        val passwordStream =
+            RxTextView.textChanges(binding.etPassword) // Creates an Observable for password box
+                .skipInitialValue() // trim boundaries
+                .map { password -> password.isEmpty() } // maps each character whether the password is empty or not
+        passwordStream.subscribe {
+            showTextMinimalAlert(
+                it,
+                "Password"
+            )
+        } // handle upon each character
 
 
         // Button Enable/Disable
-        val invalidFieldsStream: Observable<Boolean> = Observable.combineLatest(userNameStream,
-            passwordStream) { usernameInvalid: Boolean, passwordInvalid: Boolean ->
+        val invalidFieldsStream: Observable<Boolean> = Observable.combineLatest(
+            userNameStream,
+            passwordStream
+        ) { usernameInvalid: Boolean, passwordInvalid: Boolean ->
             !usernameInvalid && !passwordInvalid
         }
 
         invalidFieldsStream.subscribe { isValid: Boolean ->
             if (isValid) {
                 binding.loginbtn.isEnabled = true
-                binding.loginbtn.backgroundTintList = ContextCompat.getColorStateList(this,
-                    R.color.primary_color)
+                binding.loginbtn.backgroundTintList = ContextCompat.getColorStateList(
+                    this,
+                    R.color.primary_color
+                )
             } else {
                 binding.loginbtn.isEnabled = false
                 binding.loginbtn.backgroundTintList =
@@ -93,7 +106,7 @@ class LoginActivity : AppCompatActivity() {
                 try {
                     showErrorDialog(resources.getString(R.string.network_error_text))
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e("Login Exception", e.message.toString())
                 }
             }
         }
@@ -118,12 +131,13 @@ class LoginActivity : AppCompatActivity() {
             val intent = Intent(this, ResetPasswordActivity::class.java)
             intent.putExtra("Mail", binding.etMail.text.toString().trim())
             startActivity(intent)
+            finish()
         }
     }
 
     private fun signInGoogle() {
-        googleSignInClient.signOut()
-        val signInIntent = googleSignInClient.signInIntent
+        googleSignInClient.signOut() // Sign out the previous logged user first
+        val signInIntent = googleSignInClient.signInIntent // Starts the Google Sign In Flow
         launcher.launch(signInIntent)
     }
 
@@ -147,10 +161,12 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun updateUI(account: GoogleSignInAccount) {
+        // Get user credentials by token and sign in if the creds are valid
         val credential = GoogleAuthProvider.getCredential(account.idToken, null)
         auth.signInWithCredential(credential).addOnCompleteListener {
             if (it.isSuccessful) {
                 startActivity(Intent(this, HomeActivity::class.java))
+                finish()
             } else {
                 showErrorDialog(it.exception?.message.toString())
             }
@@ -162,6 +178,7 @@ class LoginActivity : AppCompatActivity() {
             .addOnCompleteListener(this) { login ->
                 if (login.isSuccessful) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        // Verify if user has been verified by pressing link given through mail
                         checkMailVerification()
                     }
                 } else {
@@ -182,7 +199,12 @@ class LoginActivity : AppCompatActivity() {
             showErrorDialog("Seems like you have not verified your mail yet!")
             val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
+                vibrator.vibrate(
+                    VibrationEffect.createOneShot(
+                        200,
+                        VibrationEffect.DEFAULT_AMPLITUDE
+                    )
+                )
             }
             auth.signOut()
         }
@@ -195,9 +217,11 @@ class LoginActivity : AppCompatActivity() {
             binding.etPassword.error = if (isNotValid) "$text cannot be empty!" else null
     }
 
-    private fun isOnline(): Boolean {
-        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val network = connectivityManager.activeNetwork // returns a 'Network' object representing the currently active network.
+    private fun isOnline(): Boolean { // Check Internet connections
+        val connectivityManager =
+            getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network =
+            connectivityManager.activeNetwork // returns a 'Network' object representing the currently active network.
         // retrieve the network capabilities using the getNetworkCapabilities() method which returns a NetworkCapabilities object that provides information about the network.
         val capabilities = connectivityManager.getNetworkCapabilities(network)
         // NET_CAPABILITY_INTERNET capability, indicates that the device has an internet connection available or not
@@ -205,24 +229,14 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun showErrorDialog(message: String) {
-        val builder = AlertDialog.Builder(this, R.style.AlertDialogTheme)
-        val ebinding: ErrorDialogBinding = ErrorDialogBinding.bind(LayoutInflater.from(this)
-            .inflate(R.layout.error_dialog,
-                findViewById<ConstraintLayout>(R.id.layoutDialogContainer)))
 
-        builder.setView(ebinding.root)
-        ebinding.textTitle.text = resources.getString(R.string.network_error_title)
-        ebinding.textMessage.text = message
-        ebinding.buttonAction.text = resources.getString(R.string.okay)
-        ebinding.imageIcon.setImageResource(R.drawable.error)
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("ERROR")
+        builder.setMessage(message)
+        builder.setIcon(R.drawable.error)
+        builder.setNeutralButton("Okay") { _, _ -> }
 
-        val alertDialog = builder.create()
-        ebinding.buttonAction.setOnClickListener { alertDialog.dismiss() }
-
-        if (alertDialog.window != null) {
-            alertDialog.window!!.setBackgroundDrawable(ColorDrawable(0))
-        }
-
+        val alertDialog = builder.create() // Create the AlertDialog
         alertDialog.setCancelable(false)
         alertDialog.show()
     }
