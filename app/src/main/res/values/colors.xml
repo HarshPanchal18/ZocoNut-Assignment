@@ -20,4 +20,6 @@
     <color name="colorError">#F44336</color>
     <color name="transparent">#00F44336</color>
     <color name="skyblue">#FC36A7F3</color>
+    <color name="purple">#5160AF</color>
+    <color name="toolbar_bg">#A3E795</color>
 </resources>

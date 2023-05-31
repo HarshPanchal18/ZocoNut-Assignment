@@ -20,7 +20,7 @@ class ContactActivity : AppCompatActivity() {
     private lateinit var dbReference: DatabaseReference
     private val user = FirebaseAuth.getInstance().currentUser
     private var userContacts = ArrayList<UserModel?>()
-    val adapter = ContactAdapter(userContacts)
+    val adapter = ContactAdapter(this,userContacts)
     private val profileSaves: ArrayList<String> = ArrayList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,14 +30,13 @@ class ContactActivity : AppCompatActivity() {
 
         binding.contactRecycler.setHasFixedSize(true)
         binding.contactRecycler.layoutManager = LinearLayoutManager(this)
+        binding.backBtn.setOnClickListener { finish() }
 
         dbReference =
             FirebaseDatabase.getInstance().getReference("users")
 
         fetchProfileSaves(user?.uid.toString())
         binding.contactRecycler.adapter = adapter
-        if(adapter.itemCount == 0)
-            binding.emptyContacts.visibility = View.VISIBLE
     }
 
     private fun fetchUsers(profileSaves: List<String>) {
@@ -53,6 +52,8 @@ class ContactActivity : AppCompatActivity() {
                             usersList.add(userModel)
                     }
                 }
+                if(usersList.size == 0)
+                    binding.emptyContacts.visibility = View.VISIBLE
                 adapter.setUsers(usersList) // Set Adapter after storing users
                 Log.e("UserList", usersList.toString())
             }

@@ -1,63 +1,86 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:layout_alignParentTop="true"
+        android:layout_marginHorizontal="5sp"
+        android:layout_marginTop="5sp"
+        android:background="@drawable/dialog_bg"
+        android:backgroundTint="@color/primary_color"
+        app:contentInsetLeft="0dp"
+        app:contentInsetStart="0dp">
+
+        <ImageButton
+            android:id="@+id/contactListBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10sp"
+            android:backgroundTint="#00000000"
+            android:contentDescription="View Contacts"
+            android:src="@drawable/ic_contact_list_btn" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:fontFamily="@font/montserrat"
+            android:text="Home"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/logoutBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginTop="10sp"
+            android:layout_marginEnd="10sp"
+            android:backgroundTint="#00000000"
+            android:src="@drawable/ic_logout" />
+
+        <ImageButton
+            android:id="@+id/scannerBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_gravity="end"
+            android:layout_marginStart="10sp"
+            android:layout_marginTop="10sp"
+            android:layout_marginEnd="10sp"
+            android:layout_marginBottom="10sp"
+            android:layout_toStartOf="@id/logoutBtn"
+            android:backgroundTint="#00000000"
+            android:contentDescription="QR Button"
+            android:src="@drawable/ic_qr_code_scanner" />
+
+    </androidx.appcompat.widget.Toolbar>
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/buttonPanel"
+        android:layout_below="@id/toolbar"
+        android:layout_marginVertical="5sp"
         tools:context=".ui.HomeActivity">
 
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <ImageButton
-                android:id="@+id/contactListBtn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentTop="true"
-                android:layout_marginStart="10sp"
-                android:layout_marginTop="10sp"
-                android:layout_marginEnd="10sp"
-                android:layout_marginBottom="10sp"
-                android:backgroundTint="#00000000"
-                android:contentDescription="View Contacts"
-                android:src="@drawable/ic_contact_list_btn" />
-
-            <ImageButton
-                android:id="@+id/scannerBtn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentTop="true"
-                android:layout_alignParentEnd="true"
-                android:layout_marginStart="10sp"
-                android:layout_marginTop="10sp"
-                android:layout_marginEnd="10sp"
-                android:layout_marginBottom="10sp"
-                android:backgroundTint="#00000000"
-                android:contentDescription="QR Button"
-                android:src="@drawable/ic_qr_code_scanner" />
-
-            <ImageButton
-                android:id="@+id/logoutBtn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/scannerBtn"
-                android:layout_alignParentEnd="true"
-                android:layout_marginEnd="10sp"
-                android:backgroundTint="#00000000"
-                android:src="@drawable/ic_logout" />
-
             <FrameLayout
                 android:id="@+id/profileFrame"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerHorizontal="true"
-                android:layout_marginTop="75sp">
+                android:layout_marginTop="35sp">
 
                 <ImageView
                     android:id="@+id/profileImage"
@@ -101,10 +124,10 @@
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/nameBox"
                     style="@style/TextInputEditText"
-                    android:textStyle="bold"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textCapWords" />
+                    android:inputType="textCapWords"
+                    android:textStyle="bold" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -122,10 +145,10 @@
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/mailBox"
                     style="@style/TextInputEditText"
-                    android:textStyle="bold"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textCapWords" />
+                    android:inputType="textCapWords"
+                    android:textStyle="bold" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -134,7 +157,7 @@
                 style="@style/TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/tilMail"
+                android:layout_below="@id/tilPhone"
                 android:layout_marginHorizontal="30sp"
                 android:layout_marginTop="10dp"
                 android:enabled="false"
@@ -143,11 +166,11 @@
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/githubBox"
                     style="@style/TextInputEditText"
-                    android:textStyle="bold"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:inputType="textCapWords"
                     android:singleLine="true"
-                    android:inputType="textCapWords" />
+                    android:textStyle="bold" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -165,11 +188,11 @@
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/skillBox"
                     style="@style/TextInputEditText"
-                    android:textStyle="bold"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:inputType="textCapWords|textMultiLine"
                     android:maxLines="8"
-                    android:inputType="textCapWords|textMultiLine" />
+                    android:textStyle="bold" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -178,7 +201,7 @@
                 style="@style/TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/tilSkills"
+                android:layout_below="@id/tilMail"
                 android:layout_marginHorizontal="30sp"
                 android:layout_marginTop="10dp"
                 android:enabled="false"
@@ -187,10 +210,11 @@
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/phoneBox"
                     style="@style/TextInputEditText"
-                    android:textStyle="bold"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="phone" />
+                    android:inputType="phone"
+                    android:maxLength="13"
+                    android:textStyle="bold" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -199,7 +223,7 @@
                 style="@style/TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/tilPhone"
+                android:layout_below="@id/tilSkills"
                 android:layout_marginHorizontal="30sp"
                 android:layout_marginTop="10dp"
                 android:layout_marginBottom="40sp"
@@ -210,9 +234,9 @@
                     android:id="@+id/countryBox"
                     style="@style/TextInputEditText"
                     android:layout_width="match_parent"
-                    android:textStyle="bold"
                     android:layout_height="wrap_content"
-                    android:inputType="textCapWords" />
+                    android:inputType="textCapWords"
+                    android:textStyle="bold" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -231,7 +255,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="10sp"
+        android:layout_marginBottom="5sp"
         android:orientation="horizontal">
 
         <androidx.appcompat.widget.AppCompatButton
@@ -239,7 +263,8 @@
             style="@style/ButtonGreen"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="10sp"
+            android:layout_marginStart="10sp"
+            android:layout_marginEnd="5sp"
             android:layout_weight="1"
             android:text="Edit Profile" />
 
@@ -248,7 +273,8 @@
             style="@style/ButtonGreen"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="10sp"
+            android:layout_marginStart="5sp"
+            android:layout_marginEnd="10sp"
             android:layout_weight="1"
             android:enabled="false"
             android:text="Done" />

@@ -8,11 +8,11 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
-import com.bumptech.glide.Glide
 import com.example.zoconut_assignment.databinding.ActivityMainBinding
 import com.example.zoconut_assignment.ui.HomeActivity
 import com.example.zoconut_assignment.ui.login.LoginActivity
 import com.google.firebase.auth.FirebaseAuth
+
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -22,10 +22,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        val imageURL = "https://images-platform.99static.com/RztiiH9pqgGqYRnJfr7SnE32fZQ=/0x0:1064x1064/500x500/top/smart/99designs-contests-attachments/93/93904/attachment_93904590"
-        Glide.with(this).load(imageURL)
-            .into(binding.splashImage)
 
         Handler(Looper.getMainLooper()).postDelayed({
             auth = FirebaseAuth.getInstance()
