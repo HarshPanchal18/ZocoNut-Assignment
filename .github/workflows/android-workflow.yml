@@ -36,8 +36,8 @@ jobs:
           org.gradle.daemon: true
         run: ./gradlew assemble #Debug --stacktrace #-PapiLevel=${{ matrix.api-level }}
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v3
-        with:
-          name: Venue-Dock
-          path: app/build/outputs/apk/debug/app-debug.apk
+      #- name: Upload APK
+        #uses: actions/upload-artifact@v3
+        #with:
+          #name: ZocoNut
+          #path: app/build/outputs/apk/debug/app-debug.apk
