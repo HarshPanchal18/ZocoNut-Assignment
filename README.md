@@ -32,12 +32,10 @@ _***Usage***_
 * You can call the person by tapping on `"Call"` icon.
 
 _***Displays***_
-![](/Snaps/ScreenshotSplash.png)
-![](/Snaps/ScreenshotLogin.png)
-![](/Snaps/ScreenshotRegister.png)
-![](/Snaps/ScreenshotHome.png)
-![](/Snaps/ScreenshotQR.png)
-![](/Snaps/ScreenshotContact.png)
+| - | - | - |
+|---|---|---|
+| ![](/Snaps/ScreenshotSplash.png) | ![](/Snaps/ScreenshotLogin.png) | ![](/Snaps/ScreenshotRegister.png) |
+| ![](/Snaps/ScreenshotHome.png) | ![](/Snaps/ScreenshotQR.png) | ![](/Snaps/ScreenshotContact.png) |
 
 _***Contributing***_
 * If you would like to contribute to this project, please follow these steps:
