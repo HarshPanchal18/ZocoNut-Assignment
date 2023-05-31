@@ -32,6 +32,7 @@ _***Usage***_
 * You can call the person by tapping on `"Call"` icon.
 
 _***Displays***_
+
 | - | - | - |
 |---|---|---|
 | ![](/Snaps/ScreenshotSplash.png) | ![](/Snaps/ScreenshotLogin.png) | ![](/Snaps/ScreenshotRegister.png) |
